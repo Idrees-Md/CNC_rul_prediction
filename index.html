@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CNC Live RUL Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f8fc;
+      color: #172033;
+    }
+
+    nav {
+      background: white;
+      padding: 18px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    nav h2 {
+      color: #0b67c2;
+    }
+
+    nav a {
+      margin-left: 20px;
+      color: #66738a;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 35px 20px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #ffffff, #eaf4ff);
+      padding: 35px;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(15, 42, 75, 0.12);
+      margin-bottom: 25px;
+    }
+
+    .hero h1 {
+      color: #084d92;
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .hero p {
+      color: #66738a;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #0b67c2;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #084d92;
+    }
+
+    .stop {
+      background: #ef4444;
+    }
+
+    .stop:hover {
+      background: #c92e2e;
+    }
+
+    .status-pill {
+      background: #eef6ff;
+      color: #084d92;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: bold;
+      border: 1px solid #d9e4f2;
+    }
+
+    .live-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(15, 42, 75, 0.10);
+      border: 1px solid #d9e4f2;
+    }
+
+    .card h3 {
+      color: #66738a;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .card p {
+      color: #0b67c2;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .result {
+      background: white;
+      border-left: 6px solid #0b67c2;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(15, 42, 75, 0.10);
+    }
+
+    .result h3 {
+      color: #66738a;
+      font-size: 14px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .result p {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .good { border-left-color: #10b981; }
+    .moderate { border-left-color: #f59e0b; }
+    .warning { border-left-color: #f97316; }
+    .critical { border-left-color: #ef4444; }
+
+    .section-title {
+      color: #084d92;
+      margin: 30px 0 15px;
+      font-size: 28px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(15, 42, 75, 0.10);
+      border: 1px solid #d9e4f2;
+      margin-bottom: 25px;
+    }
+
+    .chart-box {
+      height: 340px;
+      margin-top: 15px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #d9e4f2;
+      border-radius: 14px;
+      background: #fbfdff;
+    }
+
+    .log {
+      background: #f8fbff;
+      border-left: 5px solid #0b67c2;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+      color: #66738a;
+      font-weight: bold;
+    }
+
+    .log.success {
+      border-left-color: #10b981;
+    }
+
+    .log.error {
+      border-left-color: #ef4444;
+    }
+
+    @media (max-width: 900px) {
+      .live-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        display: block;
+      }
+
+      nav div {
+        margin-top: 12px;
+      }
+
+      nav a {
+        display: inline-block;
+        margin: 8px 12px 0 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .hero h1 {
+        font-size: 30px;
+      }
+
+      .container {
+        padding: 22px 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <h2>CNC Live RUL Dashboard</h2>
+    <div>
+      <a href="#live">Live</a>
+      <a href="#results">RUL</a>
+      <a href="#graph">Graph</a>
+      <a href="#logs">Logs</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Live CNC Machine RUL Monitoring</h1>
+      <p>
+        This dashboard automatically reads CNC machine data from the backend dataset,
+        predicts Remaining Useful Life, and updates live without manual input.
+      </p>
+    </section>
+
+    <div class="toolbar">
+      <button onclick="startLive()">Start Live</button>
+      <button class="stop" onclick="stopLive()">Stop Live</button>
+      <button onclick="fetchLiveData()">Next Reading</button>
+      <span class="status-pill" id="connectionStatus">Backend: Checking</span>
+      <span class="status-pill" id="liveStatus">Live: Stopped</span>
+    </div>
+
+    <h2 class="section-title" id="live">Live Machine Readings</h2>
+
+    <section class="live-grid">
+      <div class="card">
+        <h3>Time Hours</h3>
+        <p><span id="timeHours">--</span> h</p>
+      </div>
+
+      <div class="card">
+        <h3>Temperature</h3>
+        <p><span id="temperature">--</span> C</p>
+      </div>
+
+      <div class="card">
+        <h3>Vibration</h3>
+        <p><span id="vibration">--</span> g</p>
+      </div>
+
+      <div class="card">
+        <h3>Current</h3>
+        <p><span id="current">--</span> A</p>
+      </div>
+
+      <div class="card">
+        <h3>RPM</h3>
+        <p><span id="rpm">--</span></p>
+      </div>
+
+      <div class="card">
+        <h3>Actual RUL</h3>
+        <p><span id="actualRul">--</span> h</p>
+      </div>
+    </section>
+
+    <h2 class="section-title" id="results">Prediction Result</h2>
+
+    <section class="result-grid">
+      <div class="result" id="rulCard">
+        <h3>Predicted RUL</h3>
+        <p><span id="predictedRul">--</span> h</p>
+      </div>
+
+      <div class="result" id="healthCard">
+        <h3>Health Status</h3>
+        <p id="healthStatus">Waiting</p>
+      </div>
+
+      <div class="result" id="recommendationCard">
+        <h3>Recommendation</h3>
+        <p id="recommendation">Start live monitoring.</p>
+      </div>
+    </section>
+
+    <h2 class="section-title" id="graph">Live RUL Graph</h2>
+
+    <section class="chart-card">
+      <h2>Actual RUL vs Predicted RUL Over Time</h2>
+      <div class="chart-box">
+        <canvas id="rulCanvas"></canvas>
+      </div>
+    </section>
+
+    <h2 class="section-title" id="logs">System Logs</h2>
+
+    <section class="chart-card">
+      <div id="logBox">
+        <div class="log">Dashboard loaded. Click Start Live.</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE_URL = "http://127.0.0.1:5000";
+    let liveTimer = null;
+    let history = [];
+
+    function addLog(message, type) {
+      const logBox = document.getElementById("logBox");
+      const div = document.createElement("div");
+      div.className = "log " + (type || "");
+      div.innerText = message;
+      logBox.prepend(div);
+    }
+
+    function startLive() {
+      if (liveTimer !== null) {
+        return;
+      }
+
+      fetchLiveData();
+      liveTimer = setInterval(fetchLiveData, 2000);
+      document.getElementById("liveStatus").innerText = "Live: Running";
+      addLog("Live monitoring started.", "success");
+    }
+
+    function stopLive() {
+      if (liveTimer !== null) {
+        clearInterval(liveTimer);
+        liveTimer = null;
+      }
+
+      document.getElementById("liveStatus").innerText = "Live: Stopped";
+      addLog("Live monitoring stopped.");
+    }
+
+    function fetchLiveData() {
+      fetch(API_BASE_URL + "/api/live-data")
+        .then(function(response) {
+          return response.json().then(function(data) {
+            if (!response.ok) {
+              throw new Error(data.error || "Backend request failed.");
+            }
+            return data;
+          });
+        })
+        .then(function(data) {
+          document.getElementById("connectionStatus").innerText = "Backend: Connected";
+
+          document.getElementById("timeHours").innerText = data.time_hours;
+          document.getElementById("temperature").innerText = data.temperature;
+          document.getElementById("vibration").innerText = data.vibration;
+          document.getElementById("current").innerText = data.current;
+          document.getElementById("rpm").innerText = data.rpm;
+          document.getElementById("actualRul").innerText = data.actual_rul;
+          document.getElementById("predictedRul").innerText = data.rul;
+
+          updateHealth(data.status, data.recommendation);
+
+          history.push({
+            time: Number(data.time_hours),
+            actual: Number(data.actual_rul),
+            predicted: Number(data.rul)
+          });
+
+          if (history.length > 40) {
+            history.shift();
+          }
+
+          drawChart();
+          addLog("Live reading received. Time: " + data.time_hours + " h, Predicted RUL: " + data.rul + " h.", "success");
+        })
+        .catch(function(error) {
+          document.getElementById("connectionStatus").innerText = "Backend: Error";
+          addLog("Live data error: " + error.message, "error");
+        });
+    }
+
+    function updateHealth(status, recommendation) {
+      const healthCard = document.getElementById("healthCard");
+      const recommendationCard = document.getElementById("recommendationCard");
+
+      healthCard.className = "result";
+      recommendationCard.className = "result";
+
+      document.getElementById("healthStatus").innerText = status || "Unknown";
+      document.getElementById("recommendation").innerText = recommendation || "No recommendation returned.";
+
+      if (status === "Good") {
+        healthCard.classList.add("good");
+        recommendationCard.classList.add("good");
+      } else if (status === "Moderate") {
+        healthCard.classList.add("moderate");
+        recommendationCard.classList.add("moderate");
+      } else if (status === "Warning") {
+        healthCard.classList.add("warning");
+        recommendationCard.classList.add("warning");
+      } else if (status === "Critical") {
+        healthCard.classList.add("critical");
+        recommendationCard.classList.add("critical");
+      }
+    }
+
+    function setupCanvas() {
+      const canvas = document.getElementById("rulCanvas");
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      return {
+        ctx: ctx,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    function drawChart() {
+      const setup = setupCanvas();
+      const ctx = setup.ctx;
+      const width = setup.width;
+      const height = setup.height;
+
+      ctx.clearRect(0, 0, width, height);
+
+      if (history.length === 0) {
+        ctx.fillStyle = "#66738a";
+        ctx.font = "bold 16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Live graph will appear here", width / 2, height / 2);
+        ctx.textAlign = "left";
+        return;
+      }
+
+      const left = 60;
+      const right = 30;
+      const top = 45;
+      const bottom = 45;
+
+      const values = [];
+      history.forEach(function(item) {
+        values.push(item.actual);
+        values.push(item.predicted);
+      });
+
+      const maxValue = Math.max.apply(null, values);
+      const minValue = Math.min.apply(null, values);
+
+      ctx.fillStyle = "#084d92";
+      ctx.font = "bold 16px Arial";
+      ctx.fillText("Blue: Predicted RUL   Green: Actual RUL", 20, 25);
+
+      ctx.strokeStyle = "#d9e4f2";
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= 5; i++) {
+        const y = top + ((height - top - bottom) * i / 5);
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(width - right, y);
+        ctx.stroke();
+      }
+
+      drawLine(ctx, width, height, left, right, top, bottom, minValue, maxValue, "actual", "#10b981");
+      drawLine(ctx, width, height, left, right, top, bottom, minValue, maxValue, "predicted", "#0b67c2");
+    }
+
+    function drawLine(ctx, width, height, left, right, top, bottom, minValue, maxValue, key, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+
+      history.forEach(function(item, index) {
+        const x = left + ((width - left - right) * index / Math.max(history.length - 1, 1));
+        const y = height - bottom -
+          ((item[key] - minValue) / Math.max(maxValue - minValue, 1)) *
+          (height - top - bottom);
+
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.stroke();
+
+      history.forEach(function(item, index) {
+        const x = left + ((width - left - right) * index / Math.max(history.length - 1, 1));
+        const y = height - bottom -
+          ((item[key] - minValue) / Math.max(maxValue - minValue, 1)) *
+          (height - top - bottom);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+    }
+
+    window.addEventListener("resize", drawChart);
+    drawChart();
+  </script>
+</body>
+</html>
